@@ -355,7 +355,7 @@
                 
                 const result = await response.json();
                 
-                if (result.success) {
+                if (response.ok && result.success) {
                     currentPhone = data.phone;
                     showPage('verify-signup');
                     showAlert('verify-signup', 'OTP sent to your WhatsApp!', 'success');
@@ -363,7 +363,8 @@
                     showAlert('signup', result.error || 'Signup failed');
                 }
             } catch (error) {
-                showAlert('signup', 'Network error. Please try again.');
+                console.error('Signup error:', error);
+                showAlert('signup', 'Connection error. Check if API is deployed correctly.');
             }
             
             btn.disabled = false;
