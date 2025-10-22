@@ -1,6 +1,10 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/auth" },
-    { "source": "/(.*)", "destination": "/public/index.html" }
+    { "source": "/api/signup", "destination": "/api/auth" },
+    { "source": "/api/login", "destination": "/api/auth" },
+    { "source": "/api/verify-signup", "destination": "/api/auth" },
+    { "source": "/api/verify-login", "destination": "/api/auth" },
+    { "source": "/api/user", "destination": "/api/auth" },
+    { "source": "/", "destination": "/public/index.html" }
   ]
 }
