@@ -52,12 +52,16 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const { url, method } = req;
+  // Parse the URL path
+  const urlParts = req.url.split('?')[0].split('/');
+  const endpoint = urlParts[urlParts.length - 1];
+  const method = req.method;
+  
   const db = await connectDB();
 
   try {
     // POST /api/signup - Request OTP for signup
-    if (url === '/api/signup' && method === 'POST') {
+    if (endpoint === 'signup' && method === 'POST') {
       const { name, email, phone, password } = await parseBody(req);
       
       if (!name || !email || !phone || !password) {
@@ -102,7 +106,7 @@ module.exports = async (req, res) => {
     }
 
     // POST /api/verify-signup - Verify OTP and complete signup
-    if (url === '/api/verify-signup' && method === 'POST') {
+    if (endpoint === 'verify-signup' && method === 'POST') {
       const { phone, code } = await parseBody(req);
       
       if (!phone || !code) {
@@ -156,7 +160,7 @@ module.exports = async (req, res) => {
     }
 
     // POST /api/login - Request OTP for login
-    if (url === '/api/login' && method === 'POST') {
+    if (endpoint === 'login' && method === 'POST') {
       const { phone } = await parseBody(req);
       
       if (!phone) {
@@ -184,7 +188,7 @@ module.exports = async (req, res) => {
     }
 
     // POST /api/verify-login - Verify OTP and login
-    if (url === '/api/verify-login' && method === 'POST') {
+    if (endpoint === 'verify-login' && method === 'POST') {
       const { phone, code } = await parseBody(req);
       
       if (!phone || !code) {
@@ -225,7 +229,7 @@ module.exports = async (req, res) => {
     }
 
     // GET /api/user - Get current user
-    if (url === '/api/user' && method === 'GET') {
+    if (endpoint === 'user' && method === 'GET') {
       const authHeader = req.headers.authorization;
       
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
