@@ -52,9 +52,13 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  // Parse the URL path
-  const urlParts = req.url.split('?')[0].split('/');
-  const endpoint = urlParts[urlParts.length - 1];
+  // Get the original request path before rewrite
+  const originalPath = req.headers['x-vercel-forwarded-for'] || req.url;
+  const urlPath = originalPath.split('?')[0];
+  
+  // Extract endpoint name from the path
+  const pathParts = urlPath.split('/').filter(p => p);
+  const endpoint = pathParts[pathParts.length - 1] || 'auth';
   const method = req.method;
   
   const db = await connectDB();
