@@ -5,11 +5,21 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 const OTP_API = process.env.OTP_API_URL || 'https://otp.dynamictech.gleeze.com';
+
+if (!MONGODB_URI) {
+  console.error('FATAL: MONGODB_URI environment variable is required');
+  process.exit(1);
+}
+
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required');
+  process.exit(1);
+}
 
 let cachedDb = null;
 
