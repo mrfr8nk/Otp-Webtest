@@ -233,7 +233,7 @@ app.get('/api/user', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     
-    if (!authHeader) {
+    if (!authHeader || typeof authHeader !== 'string') {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
@@ -277,7 +277,7 @@ app.put('/api/user', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     
-    if (!authHeader) {
+    if (!authHeader || typeof authHeader !== 'string') {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
