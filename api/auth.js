@@ -236,7 +236,11 @@ module.exports = async (req, res) => {
     if (endpoint === 'user' && method === 'GET') {
       const authHeader = req.headers.authorization;
       
-      if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+      if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
+      if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
@@ -271,7 +275,11 @@ module.exports = async (req, res) => {
     if (endpoint === 'user' && method === 'PUT') {
       const authHeader = req.headers.authorization;
       
-      if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+      if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
+      if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
