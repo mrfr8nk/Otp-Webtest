@@ -45,7 +45,7 @@ app.use(express.static('public'));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
@@ -233,7 +233,11 @@ app.get('/api/user', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -265,6 +269,72 @@ app.get('/api/user', async (req, res) => {
     }
   } catch (error) {
     console.error('Get user error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/user', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const { name, email } = req.body;
+      
+      if (!name || !email) {
+        return res.status(400).json({ error: 'Name and email are required' });
+      }
+
+      const db = await connectDB();
+      
+      const emailExists = await db.collection('users').findOne({ 
+        email,
+        _id: { $ne: new ObjectId(decoded.userId) }
+      });
+      
+      if (emailExists) {
+        return res.status(400).json({ error: 'Email already in use by another account' });
+      }
+
+      const result = await db.collection('users').updateOne(
+        { _id: new ObjectId(decoded.userId) },
+        { $set: { name, email, updatedAt: new Date() } }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const user = await db.collection('users').findOne({ 
+        _id: new ObjectId(decoded.userId) 
+      });
+
+      return res.json({ 
+        success: true,
+        message: 'Profile updated successfully',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          verified: user.verified
+        }
+      });
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  } catch (error) {
+    console.error('Update user error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

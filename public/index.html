@@ -554,7 +554,36 @@
             margin-top: 15px;
         }
 
+        .logo-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 12px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo-svg {
+            display: block;
+        }
+
         @media (max-width: 768px) {
+            .logo-container {
+                top: 15px;
+                left: 15px;
+                padding: 10px 16px;
+            }
+
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
@@ -576,6 +605,46 @@
     </style>
 </head>
 <body>
+    <div class="logo-container">
+        <svg class="logo-svg" width="160" height="50" viewBox="0 0 160 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                </linearGradient>
+                <filter id="textShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+                    <feOffset dx="0" dy="1" result="offsetblur"/>
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.4"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            
+            <!-- Main Brand Text -->
+            <text x="5" y="26" 
+                  font-family="Poppins, -apple-system, BlinkMacSystemFont, sans-serif" 
+                  font-size="24" 
+                  font-weight="700" 
+                  fill="url(#logoGradient)"
+                  filter="url(#textShadow)"
+                  letter-spacing="1">W.A OTP</text>
+            
+            <!-- Subtitle -->
+            <text x="5" y="42" 
+                  font-family="Poppins, sans-serif" 
+                  font-size="9" 
+                  fill="rgba(255,255,255,0.6)" 
+                  font-weight="400"
+                  letter-spacing="0.5">WhatsApp Auth</text>
+        </svg>
+    </div>
+    
     <div class="container" id="main-container">
         <div class="header">
             <div class="header-icon">
@@ -774,6 +843,36 @@
                     <p><strong>Email:</strong> <span id="user-email"></span></p>
                     <p><strong>Phone:</strong> <span id="user-phone"></span></p>
                     <p><strong>Member Since:</strong> <span id="user-joined">Today</span></p>
+                </div>
+
+                <div class="dashboard-card" id="edit-profile-section">
+                    <h3>
+                        <i data-lucide="edit"></i>
+                        Update Profile
+                    </h3>
+                    <div id="profile-update-alert"></div>
+                    <form id="profile-update-form">
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="user"></i>
+                                Full Name
+                            </label>
+                            <input type="text" id="update-name" placeholder="John Doe" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i data-lucide="mail"></i>
+                                Email Address
+                            </label>
+                            <input type="email" id="update-email" placeholder="john@example.com" required>
+                        </div>
+                        
+                        <button type="submit" id="update-profile-btn">
+                            <i data-lucide="save"></i>
+                            Save Changes
+                        </button>
+                    </form>
                 </div>
 
                 <div class="dashboard-card">
@@ -1103,6 +1202,54 @@
             lucide.createIcons();
         });
         
+        document.getElementById('profile-update-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('update-profile-btn');
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader" style="width: 20px; height: 20px; animation: spin 1s linear infinite;"></i> Updating...';
+            lucide.createIcons();
+            
+            const name = document.getElementById('update-name').value;
+            const email = document.getElementById('update-email').value;
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/user`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    const initials = result.user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                    document.getElementById('user-avatar').textContent = initials;
+                    document.getElementById('user-name').textContent = result.user.name;
+                    document.getElementById('user-email').textContent = result.user.email;
+                    document.getElementById('update-name').value = result.user.name;
+                    document.getElementById('update-email').value = result.user.email;
+                    
+                    showAlert('profile-update-alert', result.message || 'Profile updated successfully!', 'success');
+                } else {
+                    showAlert('profile-update-alert', result.error || 'Update failed');
+                }
+            } catch (error) {
+                console.error('Update error:', error);
+                showAlert('profile-update-alert', 'Network error. Please try again.');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            lucide.createIcons();
+        });
+
         async function loadDashboard() {
             const user = JSON.parse(localStorage.getItem('user'));
             
@@ -1112,6 +1259,10 @@
                 document.getElementById('user-name').textContent = user.name;
                 document.getElementById('user-email').textContent = user.email;
                 document.getElementById('user-phone').textContent = user.phone;
+                
+                document.getElementById('update-name').value = user.name;
+                document.getElementById('update-email').value = user.email;
+                
                 showPage('dashboard');
             }
         }
