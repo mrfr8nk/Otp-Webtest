@@ -45,7 +45,7 @@ async function parseBody(req) {
 module.exports = async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
@@ -250,6 +250,62 @@ module.exports = async (req, res) => {
 
         return res.json({ 
           success: true,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            verified: user.verified
+          }
+        });
+      } catch (err) {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+    }
+
+    // PUT /api/user - Update user profile
+    if (endpoint === 'user' && method === 'PUT') {
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const token = authHeader.split(' ')[1];
+      
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { name, email } = await parseBody(req);
+        
+        if (!name || !email) {
+          return res.status(400).json({ error: 'Name and email are required' });
+        }
+
+        const emailExists = await db.collection('users').findOne({ 
+          email,
+          _id: { $ne: new ObjectId(decoded.userId) }
+        });
+        
+        if (emailExists) {
+          return res.status(400).json({ error: 'Email already in use by another account' });
+        }
+
+        const result = await db.collection('users').updateOne(
+          { _id: new ObjectId(decoded.userId) },
+          { $set: { name, email, updatedAt: new Date() } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = await db.collection('users').findOne({ 
+          _id: new ObjectId(decoded.userId) 
+        });
+
+        return res.json({ 
+          success: true,
+          message: 'Profile updated successfully',
           user: {
             id: user._id,
             name: user.name,
