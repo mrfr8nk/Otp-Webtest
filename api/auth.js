@@ -232,7 +232,7 @@ module.exports = async (req, res) => {
     if (endpoint === 'user' && method === 'GET') {
       const authHeader = req.headers.authorization;
       
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
